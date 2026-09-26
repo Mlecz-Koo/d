@@ -321,6 +321,7 @@ CommandExecutor {
                 List list = (List)object4;
                 boolean bl = false;
                 int n = -1;
+                int fallbackSignal = -1;
                 for (int i = 0; i < list.size(); ++i) {
                     String string = (String)list.get(i);
                     if (string == null) continue;
@@ -328,12 +329,19 @@ CommandExecutor {
                     if (string2.contains(PLACEHOLDER.toLowerCase(Locale.ROOT)) || string2.contains("stacja:")) {
                         bl = true;
                     }
-                    if (!string2.contains("%telecom_phone_signal%")
-                            && !string2.contains("%carrier_signal%")
-                            && !string2.contains("%telecom_signal%")
-                            && !string2.contains("%telecommulti_phone_signal_1%")
-                            && !string2.contains("%telecommulti_phone_signal_2%")) continue;
-                    n = i;
+                    if (string2.contains("%telecommulti_phone_signal_1%")) {
+                        n = i;
+                        continue;
+                    }
+                    if (string2.contains("%telecommulti_phone_signal_2%")
+                            || string2.contains("%telecom_phone_signal%")
+                            || string2.contains("%carrier_signal%")
+                            || string2.contains("%telecom_signal%")) {
+                        fallbackSignal = i;
+                    }
+                }
+                if (n < 0) {
+                    n = fallbackSignal;
                 }
                 if (bl || n < 0 || n + 1 > list.size()) continue;
                 list.add(n + 1, STATION_LINE);
