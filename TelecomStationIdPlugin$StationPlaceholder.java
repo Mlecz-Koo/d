@@ -32,7 +32,7 @@ extends PlaceholderExpansion {
     }
 
     public String onRequest(OfflinePlayer offlinePlayer, String string) {
-        if (!"station_id".equalsIgnoreCase(string)) {
+        if (!"station_id".equalsIgnoreCase(string) && !"second_station_id".equalsIgnoreCase(string)) {
             return null;
         }
         if (offlinePlayer == null || offlinePlayer.getPlayer() == null) {
