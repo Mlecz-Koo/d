@@ -62,6 +62,7 @@ public final class TelecomStationIdPlugin extends JavaPlugin implements Listener
 
         this.registerPlaceholder();
         this.injectScoreboardLine();
+        this.getServer().getScheduler().runTaskLater(this, () -> this.injectScoreboardLine(), 10L);
         this.getLogger().info("TelecomStationId 1.3.0 enabled.");
     }
 
