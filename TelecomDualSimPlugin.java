@@ -1,17 +1,27 @@
 /*
  * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.dbteku.telecom.c.f
+ *  com.dbteku.telecom.dualsim.DualSimManager
+ *  com.dbteku.telecom.models.Carrier
+ *  joserodpt.realscoreboard.api.RealScoreboardAPI
+ *  joserodpt.realscoreboard.api.scoreboard.RScoreboard
+ *  me.clip.placeholderapi.expansion.PlaceholderExpansion
+ *  org.bukkit.Server
+ *  org.bukkit.entity.OfflinePlayer
+ *  org.bukkit.entity.Player
+ *  org.bukkit.event.EventHandler
+ *  org.bukkit.event.Listener
+ *  org.bukkit.event.player.PlayerCommandPreprocessEvent
+ *  org.bukkit.plugin.Plugin
+ *  org.bukkit.plugin.java.JavaPlugin
  */
 package com.dbteku.telecom.dualsim;
 
 import com.dbteku.telecom.c.f;
-import com.dbteku.telecom.c.k;
-import com.dbteku.telecom.chat.c;
 import com.dbteku.telecom.dualsim.DualSimManager;
-import com.dbteku.telecom.lang.b;
 import com.dbteku.telecom.models.Carrier;
-import com.dbteku.telecom.models.CellSignal;
-import com.dbteku.telecom.models.CellTower;
-import com.dbteku.telecom.models.WorldLocation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,13 +31,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import joserodpt.realscoreboard.api.RealScoreboardAPI;
 import joserodpt.realscoreboard.api.scoreboard.RScoreboard;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Server;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -35,563 +43,280 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class TelecomDualSimPlugin extends JavaPlugin implements Listener {
-    private static final String SECOND_OPERATOR = "%telecomdual_second_operator%";
-    private static final String SECOND_SIGNAL = "%telecommulti_phone_signal_2%";
-    private static final String SECOND_STATION = "%telecomstation_second_station_id%";
-
-    private static final String PRIMARY_SIGNAL_1 = "%telecommulti_phone_signal_1%";
-    private static final String PRIMARY_SIGNAL_2 = "%telecommulti_phone_signal_2%";
+public final class TelecomDualSimPlugin
+extends JavaPlugin
+implements Listener {
+    private static final String SECOND_TOKEN = "%telecomdual_second_operator%";
+    private static final String SIGNAL1 = "%telecommulti_phone_signal_1%";
+    private static final String SIGNAL2 = "%telecommulti_phone_signal_2%";
 
     public void onEnable() {
         Server server = this.getServer();
         if (server != null && server.getPluginManager() != null) {
-            server.getPluginManager().registerEvents(this, this);
+            server.getPluginManager().registerEvents((Listener)this, (Plugin)this);
         }
-
         try {
             new Expansion().register();
-        } catch (Throwable throwable) {
-            this.getLogger().log(Level.WARNING, "Nie udało się zarejestrować placeholdera telecomdual.", throwable);
         }
-
-        /*
-         * RealScoreboard renders asynchronously in some versions. Do the one-time
-         * line layout change from the main thread after all normal plugin onEnable()
-         * methods have had a chance to inject their own lines.
-         */
-        try {
-            this.getServer().getScheduler().runTaskLater(this, this::patchLoadedScoreboards, 20L);
-        } catch (Throwable throwable) {
-            this.getLogger().log(Level.WARNING, "Nie udało się zaplanować patcha RealScoreboard.", throwable);
+        catch (Throwable throwable) {
+            this.getLogger().log(Level.WARNING, "Nie uda\u0142o si\u0119 zarejestrowa\u0107 placeholdera telecomdual.", throwable);
         }
-
-        this.getLogger().info("TelecomDualSIM 5.1.0 enabled.");
+        this.patchLoadedScoreboards();
+        this.getLogger().info("TelecomDualSIM 5.0.0 enabled (safe RealScoreboard integration).");
     }
 
     @EventHandler
-    public void onCommand(PlayerCommandPreprocessEvent event) {
-        if (event == null || event.isCancelled()) {
+    public void onCommand(PlayerCommandPreprocessEvent playerCommandPreprocessEvent) {
+        if (playerCommandPreprocessEvent == null || playerCommandPreprocessEvent.isCancelled()) {
             return;
         }
-        Player player = event.getPlayer();
+        Player player = playerCommandPreprocessEvent.getPlayer();
         if (player == null) {
             return;
         }
         if (!player.hasPermission("telecom.use") && !player.isOp()) {
             return;
         }
-
-        String message = event.getMessage();
-        if (message == null) {
+        String string = playerCommandPreprocessEvent.getMessage();
+        if (string == null) {
             return;
         }
-
-        String[] args = message.trim().split("\\s+");
-        if (args.length < 2) {
+        String[] stringArray = string.trim().split("\\s+");
+        if (stringArray.length < 2) {
             return;
         }
-
-        String root = args[0];
-        if (!root.equalsIgnoreCase("/telecom") && !root.equalsIgnoreCase("/tcom")) {
+        String string2 = stringArray[0];
+        if (!string2.equalsIgnoreCase("/telecom") && !string2.equalsIgnoreCase("/tcom")) {
             return;
         }
-
-        if (args[1].equalsIgnoreCase("simleave")) {
-            DualSimManager.clearSecondCarrier(player.getUniqueId());
-            event.setCancelled(true);
-            player.sendMessage("§aSIM 2 została odłączona.");
+        if (stringArray[1].equalsIgnoreCase("simleave")) {
+            DualSimManager.clearSecondCarrier((UUID)player.getUniqueId());
+            playerCommandPreprocessEvent.setCancelled(true);
+            player.sendMessage("\u00a7aSIM 2 zosta\u0142a od\u0142\u0105czona.");
             return;
         }
-
-        if (!args[1].equalsIgnoreCase("join") || args.length < 3) {
+        if (!stringArray[1].equalsIgnoreCase("join") || stringArray.length < 3) {
             return;
         }
-
-        Carrier primary = safePrimaryCarrier(player.getName());
-        if (primary == null || primary.isNull()) {
+        Carrier carrier = TelecomDualSimPlugin.safePrimaryCarrier(player.getName());
+        if (carrier == null || carrier.isNull()) {
             return;
         }
-
-        Carrier second = findCarrierByName(args[2]);
-        if (second == null || second.isNull()) {
+        String string3 = stringArray[2];
+        Carrier carrier2 = TelecomDualSimPlugin.findCarrierByName(string3);
+        if (carrier2 == null || carrier2.isNull()) {
             return;
         }
-
-        if (second.getId().equalsIgnoreCase(primary.getId())) {
-            event.setCancelled(true);
-            player.sendMessage("§cTen operator jest już Twoją główną kartą SIM.");
+        if (carrier2.getId().equalsIgnoreCase(carrier.getId())) {
+            playerCommandPreprocessEvent.setCancelled(true);
+            player.sendMessage("\u00a7cTen operator jest ju\u017c Twoj\u0105 g\u0142\u00f3wn\u0105 kart\u0105 SIM.");
             return;
         }
-
-        Carrier oldSecond = null;
+        Carrier carrier3 = null;
         try {
-            oldSecond = DualSimManager.getSecondCarrier(player.getUniqueId());
-        } catch (Throwable ignored) {
+            carrier3 = DualSimManager.getSecondCarrier((UUID)player.getUniqueId());
         }
-
-        DualSimManager.setSecondCarrierId(player.getUniqueId(), second.getId());
-        event.setCancelled(true);
-
-        if (oldSecond != null && !oldSecond.isNull()) {
-            player.sendMessage("§aSIM 2 zmieniona na operatora §f" + second.getName() + "§a.");
+        catch (Throwable throwable) {
+            // empty catch block
+        }
+        DualSimManager.setSecondCarrierId((UUID)player.getUniqueId(), (String)carrier2.getId());
+        playerCommandPreprocessEvent.setCancelled(true);
+        if (carrier3 != null && !carrier3.isNull()) {
+            player.sendMessage("\u00a7aSIM 2 zmieniona na operatora \u00a7f" + carrier2.getName() + "\u00a7a.");
         } else {
-            player.sendMessage("§aPołączono SIM 2 z operatorem §f" + second.getName() + "§a.");
+            player.sendMessage("\u00a7aPo\u0142\u0105czono SIM 2 z operatorem \u00a7f" + carrier2.getName() + "\u00a7a.");
         }
     }
 
-    private static Carrier safePrimaryCarrier(String playerName) {
+    private static Carrier safePrimaryCarrier(String string) {
         try {
-            return f.a().i(playerName);
-        } catch (Throwable throwable) {
+            return f.a().i(string);
+        }
+        catch (Throwable throwable) {
             return null;
         }
     }
 
-    private static Carrier findCarrierByName(String name) {
+    private static Carrier findCarrierByName(String string) {
         try {
-            f telecom = f.a();
-            if (!telecom.b(name)) {
+            f f2 = f.a();
+            if (!f2.b(string)) {
                 return null;
             }
-            return telecom.d(name);
-        } catch (Throwable throwable) {
+            return f2.d(string);
+        }
+        catch (Throwable throwable) {
             return null;
         }
     }
 
-    public static String secondOperator(OfflinePlayer player) {
+    public static String secondOperator(OfflinePlayer offlinePlayer) {
         try {
-            if (player == null || player.getUniqueId() == null) {
+            if (offlinePlayer == null || offlinePlayer.getUniqueId() == null) {
                 return "$skip";
             }
-            Carrier carrier = DualSimManager.getSecondCarrier(player.getUniqueId());
+            Carrier carrier = DualSimManager.getSecondCarrier((UUID)offlinePlayer.getUniqueId());
             if (carrier == null || carrier.isNull()) {
                 return "$skip";
             }
             return carrier.getName();
-        } catch (Throwable throwable) {
+        }
+        catch (Throwable throwable) {
             return "$skip";
         }
     }
 
-    /**
-     * Calculates the second SIM signal using the real Telecom tower-selection logic.
-     * No primary SIM state is changed.
-     */
-    public static CellSignal getSecondCellSignal(Player player) {
-        if (player == null) {
-            return new CellSignal();
-        }
-
-        try {
-            Carrier carrier = DualSimManager.getSecondCarrier(player.getUniqueId());
-            if (carrier == null || carrier.isNull()) {
-                return new CellSignal();
-            }
-
-            WorldLocation location = new WorldLocation(player.getLocation());
-            CellTower tower = carrier.getBestTowerByBand(location);
-
-            if (tower != null && !tower.isNull()) {
-                double strength = tower.determineStrength(location);
-                if (strength > 0.0) {
-                    return new CellSignal(carrier.getName(), player.getName(), tower, strength);
-                }
-            }
-
-            // Match Telecom's normal peer fallback when enabled.
-            if (k.a().l()) {
-                Iterator<String> peers = carrier.getPeers();
-                Carrier peerCarrier = new Carrier();
-                CellTower peerTower = new CellTower();
-                double peerStrength = 0.0;
-
-                while (peerStrength <= 0.0 && peers.hasNext()) {
-                    peerCarrier = f.a().e(peers.next());
-                    peerTower = peerCarrier.getBestTowerByBand(location);
-                    if (peerTower != null && !peerTower.isNull()) {
-                        peerStrength = peerTower.determineStrength(location);
-                    }
-                }
-
-                if (peerStrength > 0.0 && peerTower != null && !peerTower.isNull()) {
-                    return new CellSignal(
-                        peerCarrier.getName(),
-                        player.getName(),
-                        peerTower,
-                        peerStrength,
-                        true,
-                        carrier.getName()
-                    );
-                }
-            }
-        } catch (Throwable ignored) {
-        }
-
-        return new CellSignal();
-    }
-
-    /**
-     * Formats SIM2 exactly through Telecom's normal signal template, so dots,
-     * band and the internet/globe indicator stay consistent with SIM1.
-     */
-    public static String secondSignal(OfflinePlayer offlinePlayer) {
-        try {
-            if (offlinePlayer == null || !offlinePlayer.isOnline()) {
-                return "";
-            }
-
-            Player player = offlinePlayer.getPlayer();
-            CellSignal signal = getSecondCellSignal(player);
-            if (signal == null || !signal.hasSignal()) {
-                return "";
-            }
-
-            String internetColor;
-            try {
-                if (c.c().e(player)) {
-                    internetColor = "&a";
-                } else {
-                    internetColor = signal.getBand().isInternetCapable() ? "&6" : "&c";
-                }
-            } catch (Throwable throwable) {
-                internetColor = signal.getBand().isInternetCapable() ? "&6" : "&c";
-            }
-
-            String template = b.a().bm;
-            if (template == null || template.isEmpty()) {
-                return signal.toString();
-            }
-
-            return template
-                .replace("%carrier_signal%", signal.toString())
-                .replace("%internet_status_color%", internetColor);
-        } catch (Throwable throwable) {
-            return "";
-        }
-    }
-
-
     private void patchLoadedScoreboards() {
         try {
-            RealScoreboardAPI api = RealScoreboardAPI.getInstance();
-            if (api == null || api.getScoreboardManagerAPI() == null) {
-                this.getLogger().warning("RealScoreboard API jest niedostępne — pomijam patch scoreboardu.");
+            RealScoreboardAPI realScoreboardAPI = RealScoreboardAPI.getInstance();
+            if (realScoreboardAPI == null || realScoreboardAPI.getScoreboardManagerAPI() == null) {
+                this.getLogger().warning("RealScoreboard API jest niedost\u0119pne \u2014 pomijam patch scoreboardu.");
                 return;
             }
-
-            Collection<?> scoreboards = api.getScoreboardManagerAPI().getScoreboards();
-            if (scoreboards == null) {
+            Collection collection = realScoreboardAPI.getScoreboardManagerAPI().getScoreboards();
+            if (collection == null) {
                 return;
             }
-
-            int inserted = 0;
-
-            for (Object scoreboardObject : scoreboards) {
-                if (!(scoreboardObject instanceof RScoreboard)) {
-                    continue;
-                }
-
-                RScoreboard scoreboard = (RScoreboard) scoreboardObject;
-                for (List<String> lines : getAllLineLists(scoreboard)) {
-                    if (lines == null || lines.isEmpty() || containsToken(lines)) {
-                        continue;
-                    }
-
-                    int signalIndex = findSignalLine(lines);
-                    if (signalIndex < 0) {
-                        continue;
-                    }
-
-                    int signalIndexAgain = signalIndex;
-                    if (signalIndex < 0) {
-                        continue;
-                    }
-
-                    int stationIndex = findStationLine(lines, signalIndex);
-                    int insertAfter = stationIndex >= 0 ? stationIndex : signalIndex;
-
-                    String operatorLine = buildSecondOperatorLine(lines.get(operatorIndex));
-                    String signalLine = buildSecondSignalLine(lines.get(signalIndex));
-                    String stationLine = buildSecondStationLine(stationIndex >= 0 ? lines.get(stationIndex) : null);
-
-                    lines.add(insertAfter + 1, operatorLine);
-                    lines.add(insertAfter + 2, signalLine);
-                    lines.add(insertAfter + 3, stationLine);
-                    inserted++;
-
-                    saveScoreboard(scoreboard);
+            int n = 0;
+            int n2 = 0;
+            for (RScoreboard rScoreboard : collection) {
+                for (List<String> list : TelecomDualSimPlugin.getAllLineLists(rScoreboard)) {
+                    int n3;
+                    if (list == null || list.isEmpty()) continue;
+                    n2 += TelecomDualSimPlugin.removeGarbage(list);
+                    if (TelecomDualSimPlugin.containsToken(list) || (n3 = TelecomDualSimPlugin.findOperatorLine(list)) < 0) continue;
+                    list.add(n3 + 1, TelecomDualSimPlugin.buildSecondLine(list.get(n3)));
+                    ++n;
                 }
             }
-
-            this.getLogger().info("RealScoreboard startup patch: complete SIM2 blocks inserted=" + inserted + ".");
-        } catch (Throwable throwable) {
-            this.getLogger().log(Level.WARNING, "Nie udało się przygotować RealScoreboard dla Dual SIM.", throwable);
+            this.getLogger().info("RealScoreboard startup patch: SIM2 rows inserted=" + n + ", signal rows removed=" + n2 + ".");
+        }
+        catch (Throwable throwable) {
+            this.getLogger().log(Level.WARNING, "Nie uda\u0142o si\u0119 przygotowa\u0107 RealScoreboard dla Dual SIM.", throwable);
         }
     }
 
-    private static Collection<List<String>> getAllLineLists(RScoreboard scoreboard) throws Exception {
-        ArrayList<List<String>> result = new ArrayList<>();
-        Class<?> clazz = scoreboard.getClass();
-
+    private static Collection<List<String>> getAllLineLists(RScoreboard rScoreboard) throws Exception {
+        ArrayList<List<String>> arrayList = new ArrayList<List<String>>();
+        Class<?> clazz = rScoreboard.getClass();
         if ("joserodpt.realscoreboard.api.scoreboard.RScoreboardBoards".equals(clazz.getName())) {
             Field field = clazz.getDeclaredField("boards");
             field.setAccessible(true);
-            Object boards = field.get(scoreboard);
-
-            if (boards instanceof Iterable<?>) {
-                for (Object board : (Iterable<?>) boards) {
-                    if (board == null) {
-                        continue;
-                    }
-                    Method getLines = board.getClass().getMethod("getLines");
-                    Object lines = getLines.invoke(board);
-                    if (lines instanceof List<?>) {
-                        @SuppressWarnings("unchecked")
-                        List<String> typed = (List<String>) lines;
-                        result.add(typed);
-                    }
+            Object object = field.get(rScoreboard);
+            if (object instanceof Iterable) {
+                for (Object t : (Iterable)object) {
+                    Method method = t.getClass().getMethod("getLines", new Class[0]);
+                    Object object2 = method.invoke(t, new Object[0]);
+                    if (!(object2 instanceof List)) continue;
+                    arrayList.add((List)object2);
                 }
             }
         } else {
-            result.add(scoreboard.getLines());
+            arrayList.add(rScoreboard.getLines());
         }
-
-        return result;
+        return arrayList;
     }
 
-    private static void saveScoreboard(RScoreboard scoreboard) {
-        try {
-            scoreboard.getClass().getMethod("saveScoreboard").invoke(scoreboard);
-        } catch (Throwable ignored) {
+    private static int removeGarbage(List<String> list) {
+        int n = 0;
+        Iterator<String> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            String string;
+            String string2 = iterator.next();
+            if (string2 == null || !(string = string2.toLowerCase(Locale.ROOT)).contains(SIGNAL1) && !string.contains(SIGNAL2)) continue;
+            iterator.remove();
+            ++n;
         }
+        return n;
     }
 
-    private static boolean containsToken(List<String> lines) {
-        for (String line : lines) {
-            if (line == null) {
-                continue;
-            }
-            String lower = line.toLowerCase(Locale.ROOT);
-            if (lower.contains(SECOND_OPERATOR)
-                || lower.contains(SECOND_SIGNAL)
-                || lower.contains(SECOND_STATION)) {
-                return true;
-            }
+    private static boolean containsToken(List<String> list) {
+        for (String string : list) {
+            if (string == null || !string.toLowerCase(Locale.ROOT).contains(SECOND_TOKEN)) continue;
+            return true;
         }
         return false;
     }
 
-    private static int findOperatorLine(List<String> lines) {
-        String[] placeholders = {
-            "%telecommulti_carrier_name%",
-            "%telecommulti_carrier%",
-            "%telecom_carrier_name%",
-            "%telecom_carrier%",
-            "%carrier_name%",
-            "%operator%"
-        };
-
-        for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            if (line == null) {
-                continue;
-            }
-
-            String lower = line.toLowerCase(Locale.ROOT);
-            if (lower.contains("phone_signal") || lower.contains("signal_")) {
-                continue;
-            }
-
-            for (String placeholder : placeholders) {
-                if (lower.contains(placeholder.toLowerCase(Locale.ROOT))) {
-                    return i;
-                }
-            }
-
-            if (lower.contains("operator:") || lower.contains("carrier:")) {
-                return i;
-            }
+    private static int findOperatorLine(List<String> list) {
+        String string;
+        String string2;
+        int n;
+        for (n = 0; n < list.size(); ++n) {
+            string2 = list.get(n);
+            if (string2 == null || (string = string2.toLowerCase(Locale.ROOT)).contains("phone_signal") || string.contains("signal_") || !string.contains("%telecommulti_carrier_name%") && !string.contains("%telecommulti_carrier%")) continue;
+            return n;
         }
-
+        for (n = 0; n < list.size(); ++n) {
+            string2 = list.get(n);
+            if (string2 == null || !(string = string2.toLowerCase(Locale.ROOT)).contains("%telecommulti_") || string.contains("signal")) continue;
+            return n;
+        }
         return -1;
     }
 
-    private static int findSignalLine(List<String> lines, int operatorIndex) {
-        for (int i = operatorIndex + 1; i < lines.size(); i++) {
-            String line = lines.get(i);
-            if (line == null) {
-                continue;
-            }
-
-            String lower = line.toLowerCase(Locale.ROOT);
-            if (lower.contains(PRIMARY_SIGNAL_1)
-                || lower.contains("%telecom_phone_signal%")
-                || lower.contains("%carrier_signal%")
-                || lower.contains("%telecom_signal%")
-                || lower.contains("phone_signal")) {
-                return i;
-            }
-
-            if (lower.contains("signal_")) {
-                return i;
-            }
-
-            // Stop once we hit an unrelated scoreboard section.
-            if (lower.contains("ping:")
-                || lower.contains("xyz:")
-                || lower.contains("godzina:")
-                || lower.contains("tps:")) {
-                break;
-            }
+    private static String buildSecondLine(String string) {
+        int n;
+        int n2;
+        String string2 = string == null ? "" : string;
+        String string3 = string2.replaceFirst("^([^\\S\\r\\n]*).*$", "$1");
+        String string4 = string3 + "&7SIM 2: &f%telecomdual_second_operator%";
+        String string5 = string2.toLowerCase(Locale.ROOT);
+        int n3 = string5.indexOf("operator");
+        if (n3 >= 0 && (n2 = string2.indexOf(58, n3)) >= 0) {
+            return string2.substring(0, n3) + "SIM 2" + string2.substring(n2);
         }
-
-        return -1;
+        n2 = string5.indexOf("carrier");
+        if (n2 >= 0 && (n = string2.indexOf(58, n2)) >= 0) {
+            return string2.substring(0, n2) + "SIM 2" + string2.substring(n);
+        }
+        return string4;
     }
 
-    private static int findStationLine(List<String> lines, int signalIndex) {
-        if (signalIndex + 1 < lines.size()) {
-            String next = lines.get(signalIndex + 1);
-            if (next != null) {
-                String lower = next.toLowerCase(Locale.ROOT);
-                if (lower.contains("stacja:") || lower.contains("%telecomstation_station_id%")) {
-                    return signalIndex + 1;
-                }
-            }
-        }
-
-        return -1;
-    }
-
-    private static String buildSecondOperatorLine(String primaryLine) {
-        String line = primaryLine == null ? "" : primaryLine;
-
-        String[] placeholders = {
-            "%telecommulti_carrier_name%",
-            "%telecommulti_carrier%",
-            "%telecom_carrier_name%",
-            "%telecom_carrier%",
-            "%carrier_name%",
-            "%operator%"
-        };
-
-        for (String placeholder : placeholders) {
-            String replaced = line.replaceAll("(?i)" + Pattern.quote(placeholder), Matcher.quoteReplacement(SECOND_OPERATOR));
-            if (!replaced.equals(line)) {
-                return replaced;
-            }
-        }
-
-        int colon = line.indexOf(':');
-        if (colon >= 0) {
-            String label = line.substring(0, colon);
-            if (label.toLowerCase(Locale.ROOT).contains("operator")
-                || label.toLowerCase(Locale.ROOT).contains("carrier")) {
-                String newLabel = label.replaceAll("(?i)operator|carrier", "SIM 2");
-                return newLabel + ":" + line.substring(colon + 1).replaceAll("[-&§\\w]*$", "") + " " + SECOND_OPERATOR;
-            }
-        }
-
-        String indent = line.replaceFirst("^([^\\S\\r\\n]*).*$", "$1");
-        return indent + SECOND_OPERATOR;
-    }
-
-    private static String buildSecondSignalLine(String primaryLine) {
-        String line = primaryLine == null ? "" : primaryLine;
-
-        String[] placeholders = {
-            PRIMARY_SIGNAL_1,
-            "%telecom_phone_signal%",
-            "%carrier_signal%",
-            "%telecom_signal%"
-        };
-
-        for (String placeholder : placeholders) {
-            String replaced = line.replaceAll("(?i)" + Pattern.quote(placeholder), Matcher.quoteReplacement(SECOND_SIGNAL));
-            if (!replaced.equals(line)) {
-                return replaced;
-            }
-        }
-
-        String indent = line.replaceFirst("^([^\\S\\r\\n]*).*$", "$1");
-        return indent + SECOND_SIGNAL;
-    }
-
-    private static String buildSecondStationLine(String primaryStationLine) {
-        String line = primaryStationLine;
-
-        if (line != null && !line.isEmpty()) {
-            String replaced = line.replaceAll(
-                "(?i)" + Pattern.quote("%telecomstation_station_id%"),
-                Matcher.quoteReplacement(SECOND_STATION)
-            );
-            if (!replaced.equals(line)) {
-                return replaced;
-            }
-            if (line.toLowerCase(Locale.ROOT).contains("stacja:")) {
-                int colon = line.indexOf(':');
-                if (colon >= 0) {
-                    return line.substring(0, colon + 1) + line.substring(colon + 1).replaceAll(
-                        "(?i)%[^%]+%",
-                        Matcher.quoteReplacement(SECOND_STATION)
-                    );
-                }
-            }
-        }
-
-        String indent = line == null ? "" : line.replaceFirst("^([^\\S\\r\\n]*).*$", "$1");
-        return indent + "&7Stacja: &f" + SECOND_STATION;
-    }
-
-    public static final class Expansion extends PlaceholderExpansion {
+    public static final class Expansion
+    extends PlaceholderExpansion {
         public String getIdentifier() {
             return "telecomdual";
         }
 
         public String getAuthor() {
-            return "dbteku/OpenAI";
+            return "dbteku";
         }
 
         public String getVersion() {
-            return "5.1.0";
+            return "5.0.0";
         }
 
-        public String onRequest(OfflinePlayer player, String identifier) {
-            if (identifier == null) {
+        public String onRequest(OfflinePlayer offlinePlayer, String string) {
+            if (string == null) {
                 return null;
             }
-
-            switch (identifier.toLowerCase(Locale.ROOT)) {
-                case "second_operator":
-                case "sim2_operator":
-                case "operator_2":
-                    return TelecomDualSimPlugin.secondOperator(player);
-
-                case "second_operator_id":
-                case "sim2_operator_id":
+            switch (string.toLowerCase(Locale.ROOT)) {
+                case "second_operator": 
+                case "sim2_operator": 
+                case "operator_2": {
+                    return TelecomDualSimPlugin.secondOperator(offlinePlayer);
+                }
+                case "has_second_operator": 
+                case "has_sim2": {
+                    return "$skip".equals(TelecomDualSimPlugin.secondOperator(offlinePlayer)) ? "false" : "true";
+                }
+                case "second_operator_id": 
+                case "sim2_operator_id": {
                     try {
-                        if (player == null || player.getUniqueId() == null) {
+                        if (offlinePlayer == null || offlinePlayer.getUniqueId() == null) {
                             return "";
                         }
-                        Carrier carrier = DualSimManager.getSecondCarrier(player.getUniqueId());
+                        Carrier carrier = DualSimManager.getSecondCarrier((UUID)offlinePlayer.getUniqueId());
                         return carrier == null || carrier.isNull() ? "" : carrier.getId();
-                    } catch (Throwable throwable) {
+                    }
+                    catch (Throwable throwable) {
                         return "";
                     }
-
-                case "second_signal":
-                case "sim2_signal":
-                case "phone_signal_2":
-                    return TelecomDualSimPlugin.secondSignal(player);
-
-                case "has_second_operator":
-                case "has_sim2":
-                    return "$skip".equals(TelecomDualSimPlugin.secondOperator(player)) ? "false" : "true";
-
-                default:
-                    return null;
+                }
             }
+            return null;
         }
     }
 }
+
