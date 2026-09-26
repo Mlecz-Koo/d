@@ -35,7 +35,7 @@ import joserodpt.realscoreboard.api.RealScoreboardAPI;
 import joserodpt.realscoreboard.api.scoreboard.RScoreboard;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Server;
-import org.bukkit.entity.OfflinePlayer;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -179,7 +179,9 @@ implements Listener {
             }
             int n = 0;
             int n2 = 0;
-            for (RScoreboard rScoreboard : collection) {
+            for (Object scoreboardObject : collection) {
+                if (!(scoreboardObject instanceof RScoreboard)) continue;
+                RScoreboard rScoreboard = (RScoreboard) scoreboardObject;
                 for (List<String> list : TelecomDualSimPlugin.getAllLineLists(rScoreboard)) {
                     int n3;
                     if (list == null || list.isEmpty()) continue;
