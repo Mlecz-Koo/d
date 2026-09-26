@@ -244,7 +244,17 @@ implements Listener {
         int n;
         for (n = 0; n < list.size(); ++n) {
             string2 = list.get(n);
-            if (string2 == null || (string = string2.toLowerCase(Locale.ROOT)).contains("phone_signal") || string.contains("signal_") || !string.contains("%telecommulti_carrier_name%") && !string.contains("%telecommulti_carrier%")) continue;
+            if (string2 == null || (string = string2.toLowerCase(Locale.ROOT)).contains("phone_signal") || string.contains("signal_")) continue;
+            if (string.contains("%telecommulti_carrier_name%")
+                    || string.contains("%telecommulti_carrier%")
+                    || string.contains("%telecom_carrier_name%")
+                    || string.contains("%telecom_carrier%")
+                    || string.contains("%carrier_name%")
+                    || string.contains("%operator%")
+                    || string.contains("operator:")
+                    || string.contains("carrier:")) {
+                return n;
+            }
             return n;
         }
         for (n = 0; n < list.size(); ++n) {
@@ -256,21 +266,23 @@ implements Listener {
     }
 
     private static String buildSecondLine(String string) {
-        int n;
-        int n2;
-        String string2 = string == null ? "" : string;
-        String string3 = string2.replaceFirst("^([^\\S\\r\\n]*).*$", "$1");
-        String string4 = string3 + "&7SIM 2: &f%telecomdual_second_operator%";
-        String string5 = string2.toLowerCase(Locale.ROOT);
-        int n3 = string5.indexOf("operator");
-        if (n3 >= 0 && (n2 = string2.indexOf(58, n3)) >= 0) {
-            return string2.substring(0, n3) + "SIM 2" + string2.substring(n2);
+        String line = string == null ? "" : string;
+        String lower = line.toLowerCase(Locale.ROOT);
+        int colon = line.indexOf(':');
+
+        if (colon >= 0) {
+            String label = line.substring(0, colon);
+            String value = line.substring(colon + 1);
+            String labelLower = label.toLowerCase(Locale.ROOT);
+            if (labelLower.contains("operator") || labelLower.contains("carrier")) {
+                String newLabel = label.replaceAll("(?i)operator|carrier", "SIM 2");
+                String formatting = value.replaceFirst("^(\\s*(?:[&§][0-9a-fk-or])*)?.*$", "$1");
+                return newLabel + ":" + formatting + SECOND_TOKEN;
+            }
         }
-        n2 = string5.indexOf("carrier");
-        if (n2 >= 0 && (n = string2.indexOf(58, n2)) >= 0) {
-            return string2.substring(0, n2) + "SIM 2" + string2.substring(n);
-        }
-        return string4;
+
+        String indent = line.replaceFirst("^([^\\S\\r\\n]*).*$", "$1");
+        return indent + "&7SIM 2: &f" + SECOND_TOKEN;
     }
 
     public static final class Expansion
