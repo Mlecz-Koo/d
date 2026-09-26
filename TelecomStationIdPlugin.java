@@ -328,7 +328,11 @@ CommandExecutor {
                     if (string2.contains(PLACEHOLDER.toLowerCase(Locale.ROOT)) || string2.contains("stacja:")) {
                         bl = true;
                     }
-                    if (!string2.contains("%telecom_phone_signal%") && !string2.contains("%carrier_signal%") && !string2.contains("%telecom_signal%")) continue;
+                    if (!string2.contains("%telecom_phone_signal%")
+                            && !string2.contains("%carrier_signal%")
+                            && !string2.contains("%telecom_signal%")
+                            && !string2.contains("%telecommulti_phone_signal_1%")
+                            && !string2.contains("%telecommulti_phone_signal_2%")) continue;
                     n = i;
                 }
                 if (bl || n < 0 || n + 1 > list.size()) continue;
