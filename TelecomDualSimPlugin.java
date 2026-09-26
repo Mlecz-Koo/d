@@ -304,7 +304,7 @@ public final class TelecomDualSimPlugin extends JavaPlugin implements Listener {
                         continue;
                     }
 
-                    int signalIndexAgain = findSignalLine(lines, operatorIndex);
+                    int signalIndexAgain = signalIndex;
                     if (signalIndex < 0) {
                         continue;
                     }
