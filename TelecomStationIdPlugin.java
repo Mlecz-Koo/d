@@ -263,7 +263,7 @@ CommandExecutor {
         return material == Material.IRON_BLOCK || k.a().a(material);
     }
 
-    private String currentStationId(Player player) {
+    public String currentStationId(Player player) {
         try {
             CellSignal cellSignal = TelecomApi.get().getCellSignal(player);
             if (cellSignal == null || cellSignal.isNull() || !cellSignal.hasSignal()) {
