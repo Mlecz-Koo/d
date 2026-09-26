@@ -28,17 +28,21 @@ extends PlaceholderExpansion {
     }
 
     public String getVersion() {
-        return "1.2.0";
+        return "1.3.0";
     }
 
     public String onRequest(OfflinePlayer offlinePlayer, String string) {
-        if (!"station_id".equalsIgnoreCase(string) && !"second_station_id".equalsIgnoreCase(string)) {
-            return null;
-        }
-        if (offlinePlayer == null || offlinePlayer.getPlayer() == null) {
+        if (offlinePlayer == null || offlinePlayer.getPlayer() == null || string == null) {
             return "-";
         }
-        return this.plugin.currentStationId(offlinePlayer.getPlayer());
+        if ("station_id".equalsIgnoreCase(string)) {
+            return this.plugin.currentStationId(offlinePlayer.getPlayer());
+        }
+        if ("second_station_id".equalsIgnoreCase(string)
+            || "sim2_station_id".equalsIgnoreCase(string)) {
+            return this.plugin.currentSecondStationId(offlinePlayer.getPlayer());
+        }
+        return null;
     }
 }
 
