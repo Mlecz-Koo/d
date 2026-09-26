@@ -274,6 +274,22 @@ public final class TelecomDualSimPlugin extends JavaPlugin implements Listener {
         }
     }
 
+
+    public static CellSignal getSecondCellSignal(Player player) {
+        if (player == null) return new CellSignal();
+        try {
+            Carrier carrier = DualSimManager.getSecondCarrier(player.getUniqueId());
+            if (carrier == null || carrier.isNull()) return new CellSignal();
+            WorldLocation location = new WorldLocation(player.getLocation());
+            CellTower tower = carrier.getBestTowerByBand(location);
+            if (tower != null && !tower.isNull()) {
+                double strength = tower.determineStrength(location);
+                if (strength > 0.0) return new CellSignal(carrier.getName(), player.getName(), tower, strength);
+            }
+        } catch (Throwable ignored) {}
+        return new CellSignal();
+    }
+
     private void patchLoadedScoreboards() {
         try {
             RealScoreboardAPI api = RealScoreboardAPI.getInstance();
