@@ -220,16 +220,9 @@ implements Listener {
     }
 
     private static int removeGarbage(List<String> list) {
-        int n = 0;
-        Iterator<String> iterator = list.iterator();
-        while (iterator.hasNext()) {
-            String string;
-            String string2 = iterator.next();
-            if (string2 == null || !(string = string2.toLowerCase(Locale.ROOT)).contains(SIGNAL1) && !string.contains(SIGNAL2)) continue;
-            iterator.remove();
-            ++n;
-        }
-        return n;
+        // Keep the original signal rows. The scoreboard must remain unchanged
+        // except for inserting the optional SIM 2 operator row.
+        return 0;
     }
 
     private static boolean containsToken(List<String> list) {
