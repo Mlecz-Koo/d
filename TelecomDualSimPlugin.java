@@ -290,6 +290,26 @@ public final class TelecomDualSimPlugin extends JavaPlugin implements Listener {
         return new CellSignal();
     }
 
+
+    public static String secondSignal(OfflinePlayer player) {
+        try {
+            if (player == null || !player.isOnline()) return "";
+            Player online = player.getPlayer();
+            CellSignal signal = getSecondCellSignal(online);
+            if (signal == null || !signal.hasSignal()) return "";
+            String color = signal.getBand().isInternetCapable() ? "&6" : "&c";
+            try {
+                if (c.c().e(online)) color = "&a";
+            } catch (Throwable ignored) {}
+            String template = b.a().bm;
+            if (template == null || template.isEmpty()) return signal.toString();
+            return template.replace("%carrier_signal%", signal.toString())
+                    .replace("%internet_status_color%", color);
+        } catch (Throwable ignored) {
+            return "";
+        }
+    }
+
     private void patchLoadedScoreboards() {
         try {
             RealScoreboardAPI api = RealScoreboardAPI.getInstance();
