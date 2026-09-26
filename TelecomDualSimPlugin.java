@@ -275,41 +275,6 @@ public final class TelecomDualSimPlugin extends JavaPlugin implements Listener {
     }
 
 
-    public static CellSignal getSecondCellSignal(Player player) {
-        if (player == null) return new CellSignal();
-        try {
-            Carrier carrier = DualSimManager.getSecondCarrier(player.getUniqueId());
-            if (carrier == null || carrier.isNull()) return new CellSignal();
-            WorldLocation location = new WorldLocation(player.getLocation());
-            CellTower tower = carrier.getBestTowerByBand(location);
-            if (tower != null && !tower.isNull()) {
-                double strength = tower.determineStrength(location);
-                if (strength > 0.0) return new CellSignal(carrier.getName(), player.getName(), tower, strength);
-            }
-        } catch (Throwable ignored) {}
-        return new CellSignal();
-    }
-
-
-    public static String secondSignal(OfflinePlayer player) {
-        try {
-            if (player == null || !player.isOnline()) return "";
-            Player online = player.getPlayer();
-            CellSignal signal = getSecondCellSignal(online);
-            if (signal == null || !signal.hasSignal()) return "";
-            String color = signal.getBand().isInternetCapable() ? "&6" : "&c";
-            try {
-                if (c.c().e(online)) color = "&a";
-            } catch (Throwable ignored) {}
-            String template = b.a().bm;
-            if (template == null || template.isEmpty()) return signal.toString();
-            return template.replace("%carrier_signal%", signal.toString())
-                    .replace("%internet_status_color%", color);
-        } catch (Throwable ignored) {
-            return "";
-        }
-    }
-
     private void patchLoadedScoreboards() {
         try {
             RealScoreboardAPI api = RealScoreboardAPI.getInstance();
